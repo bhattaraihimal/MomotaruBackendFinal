@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const Team = require('../models/Team');
+const prisma = require('../config/prisma');
+const { protect } = require('../middleware');
 
 // Get all team members
 router.get('/', async (req, res) => {
   try {
-    const team = await Team.find().sort({ order: 1 });
+    const team = await prisma.team.findMany({
+      orderBy: { order: 'asc' }
+    });
     res.json(team);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -13,10 +16,11 @@ router.get('/', async (req, res) => {
 });
 
 // Add new team member
-router.post('/', async (req, res) => {
-  const teamMember = new Team(req.body);
+router.post('/', protect, async (req, res) => {
   try {
-    const newTeamMember = await teamMember.save();
+    const newTeamMember = await prisma.team.create({
+      data: req.body
+    });
     res.status(201).json(newTeamMember);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -24,9 +28,12 @@ router.post('/', async (req, res) => {
 });
 
 // Update team member
-router.put('/:id', async (req, res) => {
+router.put('/:id', protect, async (req, res) => {
   try {
-    const updatedTeamMember = await Team.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updatedTeamMember = await prisma.team.update({
+      where: { id: parseInt(req.params.id) },
+      data: req.body
+    });
     res.json(updatedTeamMember);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -34,9 +41,11 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete team member
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', protect, async (req, res) => {
   try {
-    await Team.findByIdAndDelete(req.params.id);
+    await prisma.team.delete({
+      where: { id: parseInt(req.params.id) }
+    });
     res.json({ message: 'Team member deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });

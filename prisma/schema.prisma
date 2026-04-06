@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
+  role     String @default("admin")
+}
+
+model Branch {
+  id           Int      @id @default(autoincrement())
+  name         String
+  address      String
+  googleMapUrl String?
+  phone        String?
+  hours        String?
+  email        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Contact {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Gallery {
+  id        Int      @id @default(autoincrement())
+  title     String?
+  imageUrl  String
+  category  String   @default("General")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum MenuCategory {
+  Starters
+  Sushi
+  Ramen
+  Main_Course @map("Main Course")
+  Drinks
+  Desserts
+}
+
+model Menu {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  category    MenuCategory
+  image       String?
+  available   Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Team {
+  id    Int     @id @default(autoincrement())
+  name  String
+  role  String
+  image String?
+  bio   String?
+  order Int     @default(0)
+}
+
+model Testimonial {
+  id        Int      @id @default(autoincrement())
+  name      String
+  role      String?
+  content   String
+  rating    Int      @default(5)
+  image     String?
+  active    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const Contact = require('../models/Contact');
+const prisma = require('../config/prisma');
 const { protect } = require('../middleware');
 
 // POST /api/contact (Public)
 router.post('/', async (req, res) => {
   try {
-    const contact = new Contact(req.body);
-    const created = await contact.save();
+    await prisma.contact.create({
+      data: req.body
+    });
     res.status(201).json({ message: 'Message sent successfully' });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -17,7 +18,9 @@ router.post('/', async (req, res) => {
 // GET /api/contact (Admin)
 router.get('/', protect, async (req, res) => {
   try {
-    const messages = await Contact.find({}).sort({ createdAt: -1 });
+    const messages = await prisma.contact.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
     res.json(messages);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -27,14 +30,11 @@ router.get('/', protect, async (req, res) => {
 // PUT /api/contact/:id (Mark read)
 router.put('/:id', protect, async (req, res) => {
   try {
-    const message = await Contact.findById(req.params.id);
-    if (message) {
-      message.read = req.body.read || true;
-      const updated = await message.save();
-      res.json(updated);
-    } else {
-      res.status(404).json({ message: 'Message not found' });
-    }
+    const updated = await prisma.contact.update({
+      where: { id: parseInt(req.params.id) },
+      data: { read: req.body.read !== undefined ? req.body.read : true }
+    });
+    res.json(updated);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

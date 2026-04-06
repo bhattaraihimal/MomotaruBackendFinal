@@ -1,17 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
+const prisma = require('../config/prisma');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await User.findOne({ email });
-    if (user && (await user.matchPassword(password))) {
-      const jwt = require('jsonwebtoken'); // Import here or top level
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' });
       res.json({
-        _id: user._id,
+        id: user.id,
         email: user.email,
         token
       });

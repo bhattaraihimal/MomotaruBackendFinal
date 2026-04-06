@@ -1,7 +1,8 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const prisma = require('./config/prisma');
+const bcrypt = require('bcryptjs');
 
 dotenv.config();
 
@@ -29,42 +30,35 @@ app.use('/api/upload', require('./routes/upload.routes'));
 // Database Connection and Server Start
 const startServer = async () => {
   try {
-    let mongoUri = process.env.MONGO_URI;
-    let isMemory = false;
+    // Test Prisma Connection
+    await prisma.$connect();
+    console.log('SQL Database Connected via Prisma');
 
-    try {
-      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
-      console.log('MongoDB Connected (Local)');
-    } catch (err) {
-      console.log('Local MongoDB connection failed, starting in-memory database...');
-      const { MongoMemoryServer } = require('mongodb-memory-server');
-      const mongod = await MongoMemoryServer.create();
-      mongoUri = mongod.getUri();
-      await mongoose.connect(mongoUri);
-      isMemory = true;
-      console.log('MongoDB Connected (In-Memory)');
-    }
+    // Auto-seed Admin
+    const adminEmail = 'admin@momotarou.com';
+    const adminExists = await prisma.user.findUnique({
+      where: { email: adminEmail }
+    });
 
-    // Auto-seed Admin if strictly necessary or in-memory
-    const User = require('./models/User');
-    const adminExists = await User.findOne({ email: 'admin@momotarou.com' });
     if (!adminExists) {
-      const user = new User({
-        email: 'admin@momotarou.com',
-        password: 'password123', // Will be hashed by pre-save
-        role: 'admin'
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      await prisma.user.create({
+        data: {
+          email: adminEmail,
+          password: hashedPassword,
+          role: 'admin'
+        }
       });
-      await user.save();
       console.log('Admin user created: admin@momotarou.com / password123');
     }
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      if (isMemory) console.log('WARNING: Running with in-memory DB. Data will be lost on restart.');
     });
 
   } catch (error) {
     console.error('Server Startup Error:', error);
+    process.exit(1);
   }
 };
 
