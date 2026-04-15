@@ -32,7 +32,7 @@ const startServer = async () => {
   try {
     // Test Prisma Connection
     await prisma.$connect();
-    console.log('SQL Database Connected via Prisma');
+    console.log('MySQL Database Connected via Prisma');
 
     // Auto-seed Admin
     const adminEmail = 'admin@momotarou.com';
