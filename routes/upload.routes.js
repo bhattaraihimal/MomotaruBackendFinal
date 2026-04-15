@@ -2,7 +2,13 @@ const express = require('express');
 const router = express.Router();
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
-const upload = multer({ dest: '/tmp/' }); // Temp storage for serverless/local
+const storage = multer.diskStorage({
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+const upload = multer({ storage }); 
+
 
 // Cloudinary Config
 cloudinary.config({
@@ -21,6 +27,7 @@ router.post('/', upload.single('image'), async (req, res) => {
     // Upload to Cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: 'momotarou_restaurant',
+      resource_type: 'auto',
     });
 
     // Return the secure URL

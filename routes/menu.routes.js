@@ -7,7 +7,8 @@ const { protect } = require('../middleware');
 router.get('/', async (req, res) => {
   try {
     const menuItems = await prisma.menu.findMany({
-      where: { available: true }
+      where: { available: true },
+      include: { category: true }
     });
     res.json(menuItems);
   } catch (error) {
@@ -18,7 +19,9 @@ router.get('/', async (req, res) => {
 // GET /api/menu/all (Admin - View all including unavailable)
 router.get('/all', protect, async (req, res) => {
   try {
-    const menuItems = await prisma.menu.findMany();
+    const menuItems = await prisma.menu.findMany({
+      include: { category: true }
+    });
     res.json(menuItems);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -28,12 +31,21 @@ router.get('/all', protect, async (req, res) => {
 // POST /api/menu (Admin)
 router.post('/', protect, async (req, res) => {
   try {
-    const data = { ...req.body };
-    if (data.category) {
-        data.category = data.category.replace(' ', '_');
+    const { name, description, price, available, image, categoryId } = req.body;
+    
+    if (!categoryId) {
+      return res.status(400).json({ message: 'Category ID is required' });
     }
+
     const createdItem = await prisma.menu.create({
-      data: data
+      data: {
+        name,
+        description,
+        price: parseFloat(price),
+        available,
+        image,
+        categoryId: parseInt(categoryId)
+      }
     });
     res.status(201).json(createdItem);
   } catch (error) {
@@ -44,13 +56,20 @@ router.post('/', protect, async (req, res) => {
 // PUT /api/menu/:id (Admin)
 router.put('/:id', protect, async (req, res) => {
   try {
-    const data = { ...req.body };
-    if (data.category) {
-        data.category = data.category.replace(' ', '_');
-    }
+    const { name, description, price, available, image, categoryId } = req.body;
+    
+    // Build update object dynamically to allow partial updates
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (price !== undefined) updateData.price = parseFloat(price);
+    if (available !== undefined) updateData.available = available;
+    if (image !== undefined) updateData.image = image;
+    if (categoryId !== undefined) updateData.categoryId = parseInt(categoryId);
+
     const updatedItem = await prisma.menu.update({
       where: { id: parseInt(req.params.id) },
-      data: data
+      data: updateData
     });
     res.json(updatedItem);
   } catch (error) {
