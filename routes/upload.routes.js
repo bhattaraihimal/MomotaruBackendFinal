@@ -28,6 +28,7 @@ router.post('/', upload.single('image'), async (req, res) => {
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: 'momotarou_restaurant',
       resource_type: 'auto',
+      timeout: 120000,
     });
 
     // Return the secure URL

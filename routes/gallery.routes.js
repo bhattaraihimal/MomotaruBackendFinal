@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../config/prisma');
+const { Gallery } = require('../config/db');
 const { protect } = require('../middleware');
 
 // GET /api/gallery (Public - active)
 router.get('/', async (req, res) => {
   try {
-    const images = await prisma.gallery.findMany({
+    const images = await Gallery.findAll({
       where: { active: true }
     });
     res.json(images);
@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
 // GET /api/gallery/all (Admin)
 router.get('/all', protect, async (req, res) => {
   try {
-    const images = await prisma.gallery.findMany();
+    const images = await Gallery.findAll();
     res.json(images);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -28,9 +28,7 @@ router.get('/all', protect, async (req, res) => {
 // POST /api/gallery (Admin)
 router.post('/', protect, async (req, res) => {
   try {
-    const created = await prisma.gallery.create({
-      data: req.body
-    });
+    const created = await Gallery.create(req.body);
     res.status(201).json(created);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -40,10 +38,14 @@ router.post('/', protect, async (req, res) => {
 // DELETE /api/gallery/:id (Admin)
 router.delete('/:id', protect, async (req, res) => {
   try {
-    await prisma.gallery.delete({
+    const deletedCount = await Gallery.destroy({
       where: { id: parseInt(req.params.id) }
     });
-    res.json({ message: 'Removed' });
+    if (deletedCount > 0) {
+      res.json({ message: 'Removed' });
+    } else {
+      res.status(404).json({ message: 'Gallery item not found' });
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -52,11 +54,15 @@ router.delete('/:id', protect, async (req, res) => {
 // PUT (Toggle active)
 router.put('/:id', protect, async (req, res) => {
   try {
-    const updated = await prisma.gallery.update({
-      where: { id: parseInt(req.params.id) },
-      data: req.body
+    const [updatedCount] = await Gallery.update(req.body, {
+      where: { id: parseInt(req.params.id) }
     });
-    res.json(updated);
+    if (updatedCount > 0) {
+      const updated = await Gallery.findByPk(req.params.id);
+      res.json(updated);
+    } else {
+      res.status(404).json({ message: 'Gallery item not found' });
+    }
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

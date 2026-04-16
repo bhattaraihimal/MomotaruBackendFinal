@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../config/prisma');
+const { Testimonial } = require('../config/db');
 const { protect } = require('../middleware');
 
 // GET /api/testimonials (Public - only active)
 router.get('/', async (req, res) => {
   try {
-    const testimonials = await prisma.testimonial.findMany({
+    const testimonials = await Testimonial.findAll({
       where: { active: true }
     });
     res.json(testimonials);
@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
 // GET /api/testimonials/all (Admin - all)
 router.get('/all', protect, async (req, res) => {
   try {
-    const testimonials = await prisma.testimonial.findMany();
+    const testimonials = await Testimonial.findAll();
     res.json(testimonials);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -28,9 +28,7 @@ router.get('/all', protect, async (req, res) => {
 // POST /api/testimonials (Public/Admin)
 router.post('/', protect, async (req, res) => {
   try {
-    const created = await prisma.testimonial.create({
-      data: req.body
-    });
+    const created = await Testimonial.create(req.body);
     res.status(201).json(created);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -40,11 +38,15 @@ router.post('/', protect, async (req, res) => {
 // PUT /api/testimonials/:id (Admin)
 router.put('/:id', protect, async (req, res) => {
   try {
-    const updated = await prisma.testimonial.update({
-      where: { id: parseInt(req.params.id) },
-      data: req.body
+    const [updatedCount] = await Testimonial.update(req.body, {
+      where: { id: parseInt(req.params.id) }
     });
-    res.json(updated);
+    if (updatedCount > 0) {
+      const updated = await Testimonial.findByPk(req.params.id);
+      res.json(updated);
+    } else {
+      res.status(404).json({ message: 'Testimonial not found' });
+    }
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -53,10 +55,14 @@ router.put('/:id', protect, async (req, res) => {
 // DELETE /api/testimonials/:id (Admin)
 router.delete('/:id', protect, async (req, res) => {
   try {
-    await prisma.testimonial.delete({
+    const deletedCount = await Testimonial.destroy({
       where: { id: parseInt(req.params.id) }
     });
-    res.json({ message: 'Removed' });
+    if (deletedCount > 0) {
+      res.json({ message: 'Removed' });
+    } else {
+      res.status(404).json({ message: 'Testimonial not found' });
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

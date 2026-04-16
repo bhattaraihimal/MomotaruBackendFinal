@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../config/prisma');
+const { Menu, Category } = require('../config/db');
 const { protect } = require('../middleware');
 
 // GET /api/menu (Public)
 router.get('/', async (req, res) => {
   try {
-    const menuItems = await prisma.menu.findMany({
+    const menuItems = await Menu.findAll({
       where: { available: true },
-      include: { category: true }
+      include: [{ model: Category, as: 'category' }]
     });
     res.json(menuItems);
   } catch (error) {
@@ -19,8 +19,8 @@ router.get('/', async (req, res) => {
 // GET /api/menu/all (Admin - View all including unavailable)
 router.get('/all', protect, async (req, res) => {
   try {
-    const menuItems = await prisma.menu.findMany({
-      include: { category: true }
+    const menuItems = await Menu.findAll({
+      include: [{ model: Category, as: 'category' }]
     });
     res.json(menuItems);
   } catch (error) {
@@ -37,15 +37,13 @@ router.post('/', protect, async (req, res) => {
       return res.status(400).json({ message: 'Category ID is required' });
     }
 
-    const createdItem = await prisma.menu.create({
-      data: {
-        name,
-        description,
-        price: parseFloat(price),
-        available,
-        image,
-        categoryId: parseInt(categoryId)
-      }
+    const createdItem = await Menu.create({
+      name,
+      description,
+      price: parseFloat(price),
+      available,
+      image,
+      categoryId: parseInt(categoryId)
     });
     res.status(201).json(createdItem);
   } catch (error) {
@@ -67,11 +65,16 @@ router.put('/:id', protect, async (req, res) => {
     if (image !== undefined) updateData.image = image;
     if (categoryId !== undefined) updateData.categoryId = parseInt(categoryId);
 
-    const updatedItem = await prisma.menu.update({
-      where: { id: parseInt(req.params.id) },
-      data: updateData
+    const [updatedCount] = await Menu.update(updateData, {
+      where: { id: parseInt(req.params.id) }
     });
-    res.json(updatedItem);
+
+    if (updatedCount > 0) {
+      const updatedItem = await Menu.findByPk(req.params.id);
+      res.json(updatedItem);
+    } else {
+      res.status(404).json({ message: 'Item not found' });
+    }
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -80,10 +83,14 @@ router.put('/:id', protect, async (req, res) => {
 // DELETE /api/menu/:id (Admin)
 router.delete('/:id', protect, async (req, res) => {
   try {
-    await prisma.menu.delete({
+    const deletedCount = await Menu.destroy({
       where: { id: parseInt(req.params.id) }
     });
-    res.json({ message: 'Item removed' });
+    if (deletedCount > 0) {
+      res.json({ message: 'Item removed' });
+    } else {
+      res.status(404).json({ message: 'Item not found' });
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

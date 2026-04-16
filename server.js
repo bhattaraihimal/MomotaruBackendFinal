@@ -2,7 +2,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 const express = require('express');
 const cors = require('cors');
-const prisma = require('./config/prisma');
+const { sequelize, User } = require('./config/db');
 const bcrypt = require('bcryptjs');
 
 
@@ -33,24 +33,26 @@ app.use('/api/upload', require('./routes/upload.routes'));
 // Database Connection and Server Start
 const startServer = async () => {
   try {
-    // Test Prisma Connection
-    await prisma.$connect();
-    console.log('MySQL Database Connected via Prisma');
+    // Authenticate and Sync Sequelize
+    await sequelize.authenticate();
+    console.log('MySQL Database Connected via Sequelize');
+    
+    // Sync models
+    await sequelize.sync(); // or { alter: true } if you want to update existing tables
+    console.log('Database synced');
 
     // Auto-seed Admin
     const adminEmail = 'admin@momotarou.com';
-    const adminExists = await prisma.user.findUnique({
+    const adminExists = await User.findOne({
       where: { email: adminEmail }
     });
 
     if (!adminExists) {
       const hashedPassword = await bcrypt.hash('password123', 10);
-      await prisma.user.create({
-        data: {
-          email: adminEmail,
-          password: hashedPassword,
-          role: 'admin'
-        }
+      await User.create({
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'admin'
       });
       console.log('Admin user created: admin@momotarou.com / password123');
     }

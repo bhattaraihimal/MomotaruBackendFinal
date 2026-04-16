@@ -1,32 +1,33 @@
-const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const User = require('./models/User');
-
 dotenv.config();
+const { User, sequelize } = require('./config/db');
+const bcrypt = require('bcryptjs');
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(async () => {
-    console.log('MongoDB Connected');
-    
-    // Check if admin exists
-    const adminExists = await User.findOne({ email: 'admin@momotarou.com' });
+async function seedAdmin() {
+  try {
+    await sequelize.authenticate();
+    console.log('Database Connected');
+
+    const adminEmail = 'admin@momotarounepal.com';
+    const adminExists = await User.findOne({ where: { email: adminEmail } });
     if (adminExists) {
       console.log('Admin user already exists');
       process.exit();
     }
 
-    // Create Admin
-    const user = new User({
-      email: 'admin@momotarou.com',
-      password: 'password123',
+    const hashedPassword = await bcrypt.hash('MomotarouNepal@2026!', 10);
+    await User.create({
+      email: adminEmail,
+      password: hashedPassword,
       role: 'admin'
     });
 
-    await user.save();
     console.log('Admin user created');
     process.exit();
-  })
-  .catch(err => {
+  } catch (err) {
     console.error(err);
     process.exit(1);
-  });
+  }
+}
+
+seedAdmin();

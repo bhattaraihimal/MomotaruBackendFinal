@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../config/prisma');
+const { User } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await prisma.user.findUnique({
+    const user = await User.findOne({
       where: { email }
     });
 

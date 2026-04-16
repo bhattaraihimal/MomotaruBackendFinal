@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../config/prisma');
+const { Category, Menu } = require('../config/db');
 const { protect } = require('../middleware');
 
 // GET all categories (public)
 router.get('/', async (req, res) => {
     try {
-        const categories = await prisma.category.findMany({
-            include: { menus: true }
+        const categories = await Category.findAll({
+            include: [{ model: Menu, as: 'menus' }]
         });
         res.json(categories);
     } catch (error) {
@@ -18,11 +18,14 @@ router.get('/', async (req, res) => {
 // GET single category
 router.get('/:id', async (req, res) => {
     try {
-        const category = await prisma.category.findUnique({
-            where: { id: parseInt(req.params.id) },
-            include: { menus: true }
+        const category = await Category.findByPk(req.params.id, {
+            include: [{ model: Menu, as: 'menus' }]
         });
-        res.json(category);
+        if (category) {
+            res.json(category);
+        } else {
+            res.status(404).json({ message: 'Category not found' });
+        }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -33,9 +36,7 @@ router.post('/', protect, async (req, res) => {
     try {
         const { name, description, image } = req.body;
 
-        const category = await prisma.category.create({
-            data: { name, description, image }
-        });
+        const category = await Category.create({ name, description, image });
 
         res.status(201).json(category);
     } catch (error) {
@@ -48,12 +49,17 @@ router.put('/:id', protect, async (req, res) => {
     try {
         const { name, description, image } = req.body;
 
-        const updated = await prisma.category.update({
-            where: { id: parseInt(req.params.id) },
-            data: { name, description, image }
-        });
+        const [updatedCount] = await Category.update(
+            { name, description, image },
+            { where: { id: parseInt(req.params.id) } }
+        );
 
-        res.json(updated);
+        if (updatedCount > 0) {
+            const updated = await Category.findByPk(req.params.id);
+            res.json(updated);
+        } else {
+            res.status(404).json({ message: 'Category not found' });
+        }
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
@@ -62,11 +68,15 @@ router.put('/:id', protect, async (req, res) => {
 // DELETE category
 router.delete('/:id', protect, async (req, res) => {
     try {
-        await prisma.category.delete({
+        const deletedCount = await Category.destroy({
             where: { id: parseInt(req.params.id) }
         });
 
-        res.json({ message: 'Category deleted' });
+        if (deletedCount > 0) {
+            res.json({ message: 'Category deleted' });
+        } else {
+            res.status(404).json({ message: 'Category not found' });
+        }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
