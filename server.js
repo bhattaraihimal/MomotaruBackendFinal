@@ -42,19 +42,19 @@ const startServer = async () => {
     console.log('Database synced');
 
     // Auto-seed Admin
-    const adminEmail = 'admin@momotarou.com';
+    const adminEmail = 'aadmin@momotarounepal.com';
     const adminExists = await User.findOne({
       where: { email: adminEmail }
     });
 
     if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('password123', 10);
+      const hashedPassword = await bcrypt.hash('MomotarouNepal@2026!', 10);
       await User.create({
         email: adminEmail,
         password: hashedPassword,
         role: 'admin'
       });
-      console.log('Admin user created: admin@momotarou.com / password123');
+      console.log('Admin user created');
     }
 
     app.listen(PORT, () => {
