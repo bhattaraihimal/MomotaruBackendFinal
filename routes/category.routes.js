@@ -7,7 +7,8 @@ const { protect } = require('../middleware');
 router.get('/', async (req, res) => {
     try {
         const categories = await Category.findAll({
-            include: [{ model: Menu, as: 'menus' }]
+            include: [{ model: Menu, as: 'menus' }],
+            order: [['order', 'ASC']]
         });
         res.json(categories);
     } catch (error) {
@@ -34,9 +35,9 @@ router.get('/:id', async (req, res) => {
 // CREATE category (admin)
 router.post('/', protect, async (req, res) => {
     try {
-        const { name, description, image } = req.body;
+        const { name, description, image, order } = req.body;
 
-        const category = await Category.create({ name, description, image });
+        const category = await Category.create({ name, description, image, order });
 
         res.status(201).json(category);
     } catch (error) {
@@ -47,16 +48,13 @@ router.post('/', protect, async (req, res) => {
 // UPDATE category
 router.put('/:id', protect, async (req, res) => {
     try {
-        const { name, description, image } = req.body;
+        const { name, description, image, order } = req.body;
 
-        const [updatedCount] = await Category.update(
-            { name, description, image },
-            { where: { id: parseInt(req.params.id) } }
-        );
-
-        if (updatedCount > 0) {
-            const updated = await Category.findByPk(req.params.id);
-            res.json(updated);
+        const branch = await Category.findByPk(req.params.id);
+        
+        if (branch) {
+            await branch.update({ name, description, image, order });
+            res.json(branch);
         } else {
             res.status(404).json({ message: 'Category not found' });
         }

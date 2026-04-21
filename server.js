@@ -10,7 +10,16 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+// Middleware
+app.use(cors({
+  origin: "*",
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+
 app.use(express.json());
 
 // Routes
@@ -29,6 +38,7 @@ app.use('/api/team', require('./routes/team.routes'));
 app.use('/api/timeline', require('./routes/timeline.routes'));
 app.use('/api/hero', require('./routes/hero.routes'));
 app.use('/api/upload', require('./routes/upload.routes'));
+app.use('/api/franchise', require('./routes/franchise.routes'));
 
 // Database Connection and Server Start
 const startServer = async () => {
@@ -36,26 +46,32 @@ const startServer = async () => {
     // Authenticate and Sync Sequelize
     await sequelize.authenticate();
     console.log('MySQL Database Connected via Sequelize');
-    
+
     // Sync models
-    await sequelize.sync(); // or { alter: true } if you want to update existing tables
+    await sequelize.sync({ alter: true }); // Enable alter: true to update existing tables with new fields
     console.log('Database synced');
 
     // Auto-seed Admin
-    const adminEmail = 'aadmin@momotarounepal.com';
-    const adminExists = await User.findOne({
-      where: { email: adminEmail }
-    });
+    const adminEmail = 'admin@momotarounepal.com';
+    const adminPassword = 'MomotarouNepal@2026!';
+    
+    let adminUser = await User.findOne({ where: { email: adminEmail } });
 
-    if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('MomotarouNepal@2026!', 10);
+    if (!adminUser) {
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
       await User.create({
         email: adminEmail,
         password: hashedPassword,
         role: 'admin'
       });
-      console.log('Admin user created');
+      console.log(`Admin user created: ${adminEmail}`);
+    } else {
+      // Synchronize password to ensure it matches the desired one
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      await adminUser.update({ password: hashedPassword });
+      console.log(`Admin user password synchronized for: ${adminEmail}`);
     }
+
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

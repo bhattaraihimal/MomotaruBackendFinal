@@ -1,13 +1,17 @@
 const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
-  return sequelize.define('Contact', {
+  const Franchise = sequelize.define('Franchise', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    name: {
+    fullName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    contactNumber: {
       type: DataTypes.STRING,
       allowNull: false,
     },
@@ -15,13 +19,17 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    phone: {
+    preferredLocation: {
       type: DataTypes.STRING,
-      allowNull: true,
+      allowNull: false,
+    },
+    budget: {
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     message: {
       type: DataTypes.TEXT,
-      allowNull: false,
+      allowNull: true,
     },
     read: {
       type: DataTypes.BOOLEAN,
@@ -30,4 +38,6 @@ module.exports = (sequelize) => {
   }, {
     timestamps: true,
   });
+
+  return Franchise;
 };

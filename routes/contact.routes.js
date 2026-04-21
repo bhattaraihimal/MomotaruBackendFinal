@@ -2,11 +2,14 @@ const express = require('express');
 const router = express.Router();
 const { Contact } = require('../config/db');
 const { protect } = require('../middleware');
+const { sendBookingNotification } = require('../utils/emailService');
 
 // POST /api/contact (Public)
 router.post('/', async (req, res) => {
   try {
-    await Contact.create(req.body);
+    const contact = await Contact.create(req.body);
+    // Send email notification
+    await sendBookingNotification(req.body);
     res.status(201).json({ message: 'Message sent successfully' });
   } catch (error) {
     res.status(400).json({ message: error.message });

@@ -19,6 +19,10 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+    order: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
   }, {
     timestamps: true,
   });
