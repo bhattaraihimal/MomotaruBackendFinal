@@ -26,15 +26,11 @@ router.post('/', protect, async (req, res) => {
 // PUT /api/branches/:id (Admin)
 router.put('/:id', protect, async (req, res) => {
   try {
-    const [updatedCount, updatedBranches] = await Branch.update(req.body, {
-      where: { id: parseInt(req.params.id) },
-      returning: true // not all dialects support this, but for simplicity we'll just return the updated object after fetching if needed, or just the body
-    });
+    const branch = await Branch.findByPk(req.params.id);
     
-    // Sequelize update returns count. Let's find and return the object to match prisma behavior if possible, or just the body.
-    if (updatedCount > 0) {
-      const updated = await Branch.findByPk(req.params.id);
-      res.json(updated);
+    if (branch) {
+      await branch.update(req.body);
+      res.json(branch);
     } else {
       res.status(404).json({ message: 'Branch not found' });
     }

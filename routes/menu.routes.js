@@ -8,7 +8,11 @@ router.get('/', async (req, res) => {
   try {
     const menuItems = await Menu.findAll({
       where: { available: true },
-      include: [{ model: Category, as: 'category' }]
+      include: [{ model: Category, as: 'category' }],
+      order: [
+        [{ model: Category, as: 'category' }, 'order', 'ASC'],
+        ['name', 'ASC']
+      ]
     });
     res.json(menuItems);
   } catch (error) {

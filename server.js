@@ -47,7 +47,7 @@ const startServer = async () => {
     console.log('MySQL Database Connected via Sequelize');
 
     // Sync models
-    await sequelize.sync(); // or { alter: true } if you want to update existing tables
+    await sequelize.sync({ alter: true }); // Enable alter: true to update existing tables with new fields
     console.log('Database synced');
 
     // Auto-seed Admin
