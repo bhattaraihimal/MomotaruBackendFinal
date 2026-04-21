@@ -2,11 +2,14 @@ const express = require('express');
 const router = express.Router();
 const { Franchise } = require('../config/db');
 const { verifyToken, isAdmin } = require('../middleware');
+const { sendFranchiseNotification } = require('../utils/emailService');
 
 // POST /api/franchise - Public: Submit an inquiry
 router.post('/', async (req, res) => {
   try {
     const inquiry = await Franchise.create(req.body);
+    // Send email notification
+    await sendFranchiseNotification(req.body);
     res.status(201).json(inquiry);
   } catch (error) {
     console.error('Error creating franchise inquiry:', error);
