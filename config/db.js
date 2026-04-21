@@ -18,6 +18,7 @@ const Team = require('../models/Team')(sequelize);
 const Testimonial = require('../models/Testimonial')(sequelize);
 const HeroSetting = require('../models/HeroSetting')(sequelize);
 const Timeline = require('../models/Timeline')(sequelize);
+const Franchise = require('../models/Franchise')(sequelize);
 
 // Define Associations
 Category.hasMany(Menu, { foreignKey: 'categoryId', as: 'menus' });
@@ -35,4 +36,5 @@ module.exports = {
   Testimonial,
   HeroSetting,
   Timeline,
+  Franchise,
 };

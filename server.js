@@ -38,6 +38,7 @@ app.use('/api/team', require('./routes/team.routes'));
 app.use('/api/timeline', require('./routes/timeline.routes'));
 app.use('/api/hero', require('./routes/hero.routes'));
 app.use('/api/upload', require('./routes/upload.routes'));
+app.use('/api/franchise', require('./routes/franchise.routes'));
 
 // Database Connection and Server Start
 const startServer = async () => {
