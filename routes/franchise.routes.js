@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { Franchise } = require('../config/db');
-const { verifyToken, isAdmin } = require('../middleware');
+const { protect } = require('../middleware');
 const { sendFranchiseNotification } = require('../utils/emailService');
 
 // POST /api/franchise - Public: Submit an inquiry
@@ -18,7 +18,7 @@ router.post('/', async (req, res) => {
 });
 
 // GET /api/franchise - Admin: Get all inquiries
-router.get('/', verifyToken, isAdmin, async (req, res) => {
+router.get('/', protect, async (req, res) => {
   try {
     const inquiries = await Franchise.findAll({
       order: [['createdAt', 'DESC']],
@@ -30,7 +30,7 @@ router.get('/', verifyToken, isAdmin, async (req, res) => {
 });
 
 // PUT /api/franchise/:id - Admin: Mark as read/unread
-router.put('/:id', verifyToken, isAdmin, async (req, res) => {
+router.put('/:id', protect, async (req, res) => {
   try {
     const { id } = req.params;
     const { read } = req.body;
@@ -42,7 +42,7 @@ router.put('/:id', verifyToken, isAdmin, async (req, res) => {
 });
 
 // DELETE /api/franchise/:id - Admin: Delete an inquiry
-router.delete('/:id', verifyToken, isAdmin, async (req, res) => {
+router.delete('/:id', protect, async (req, res) => {
   try {
     const { id } = req.params;
     await Franchise.destroy({ where: { id } });
