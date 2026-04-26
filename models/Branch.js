@@ -46,6 +46,21 @@ module.exports = (sequelize) => {
     images: {
       type: DataTypes.JSON,
       allowNull: true,
+      get() {
+        const rawValue = this.getDataValue('images');
+        if (!rawValue) return [];
+        if (typeof rawValue === 'string') {
+          try {
+            return JSON.parse(rawValue);
+          } catch (e) {
+            return [];
+          }
+        }
+        return rawValue;
+      },
+      set(value) {
+        this.setDataValue('images', typeof value === 'string' ? value : JSON.stringify(value));
+      }
     },
     slug: {
       type: DataTypes.STRING,
